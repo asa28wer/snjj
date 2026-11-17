@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>لعبة دودة  </title>
+    <style>
+        * {
+            box-sizing: border-box;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: #ffe6eb;
+            background-image: radial-gradient(#ffb3c1 2px, transparent 2px);
+            background-size: 24px 24px;
+            color: #d63384;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        .heart-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.15;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ff4d6d"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>');
+            background-size: 40px 40px;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            margin: 5px 0;
+            font-size: 22px;
+            text-align: center;
+            color: #c2185b;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+        }
+
+        #score-board {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 6px 16px;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(214, 51, 132, 0.15);
+            color: #d63384;
+        }
+
+        #canvas-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 340px;
+            aspect-ratio: 1;
+            box-shadow: 0 10px 25px rgba(214, 51, 132, 0.2);
+            border-radius: 18px;
+            overflow: hidden;
+            border: 4px solid #ffffff;
+            background-color: #fff0f3;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* الشاشات التفاعلية (Start & Game Over) */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 230, 235, 0.92);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            border-radius: 14px;
+            z-index: 2;
+        }
+
+        .overlay h2 {
+            font-size: 20px;
+            color: #c2185b;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #ff4d6d, #c2185b);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(255, 77, 109, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(255, 77, 109, 0.4);
+        }
+
+        /* أزرار التحكم باللمس للهواتف */
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+            width: 200px;
+            height: 130px;
+        }
+
+        .touch-btn {
+            background: #ffffff;
+            border: 2px solid #ff85a1;
+            color: #ff4d6d;
+            font-size: 20px;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(214, 51, 132, 0.15);
+            cursor: pointer;
+        }
+
+        .touch-btn:active {
+            background: #ff85a1;
+            color: #ffffff;
+        }
+
+        #btn-up { grid-column: 2; grid-row: 1; }
+        #btn-left { grid-column: 1; grid-row: 2; }
+        #btn-down { grid-column: 2; grid-row: 2; }
+        #btn-right { grid-column: 3; grid-row: 2; }
+
+        .hint {
+            font-size: 12px;
+            color: #ff85a1;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="heart-bg"></div>
+
+    <div class="container">
+        <h1>لعبة دودة  </h1>
+        <div id="score-board">النقاط: 0</div>
+
+        <div id="canvas-wrapper">
+            <canvas id="gameCanvas" width="340" height="340"></canvas>
+
+            <!-- شاشة البداية -->
+            <div id="start-screen" class="overlay">
+                <button class="btn" onclick="startGame()">اللعب بدودة  ❤️</button>
+            </div>
+
+            <!-- شاشة الخسارة -->
+            <div id="game-over-screen" class="overlay" style="display: none;">
+                <h2>أوه لا! خسرت 💔</h2>
+                <button class="btn" onclick="startGame()">يلا عاود مصار شي 🔄</button>
+            </div>
+        </div>
+-->
+        <div class="controls">
+            <div class="touch-btn" id="btn-up" onclick="setDirection('UP')">▲</div>
+            <div class="touch-btn" id="btn-left" onclick="setDirection('LEFT')">◄</div>
+            <div class="touch-btn" id="btn-down" onclick="setDirection('DOWN')">▼</div>
+            <div class="touch-btn" id="btn-right" onclick="setDirection('RIGHT')">►</div>
+        </div>
+
+        <div class="hint"> 📱</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        const gridCount = 17;
+        const box = canvas.width / gridCount;
+
+        let score = 0;
+        let snake = [];
+        let food = {};
+        let d = "RIGHT";
+        let nextD = "RIGHT";
+        let gameInterval = null;
+        let isGameRunning = false;
+
+        // 
+        function drawHeart(x, y, size, color) {
+            ctx.save();
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            let topCurveHeight = size * 0.3;
+            ctx.moveTo(x, y + topCurveHeight);
+            ctx.bezierCurveTo(x, y, x - size / 2, y, x - size / 2, y + topCurveHeight);
+            ctx.bezierCurveTo(x - size / 2, y + (size + topCurveHeight) / 2, x, y + size, x, y + size);
+            ctx.bezierCurveTo(x, y + size, x + size / 2, y + (size + topCurveHeight) / 2, x + size / 2, y + topCurveHeight);
+            ctx.bezierCurveTo(x + size / 2, y, x, y, x, y + topCurveHeight);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // إعداد وبداية اللعبة
+        function startGame() {
+            document.getElementById("start-screen").style.display = "none";
+            document.getElementById("game-over-screen").style.display = "none";
+            
+            score = 0;
+            document.getElementById("score-board").innerText = "النقاط: " + score;
+
+            snake = [
+                { x: 5 * box, y: 8 * box },
+                { x: 4 * box, y: 8 * box },
+                { x: 3 * box, y: 8 * box }
+            ];
+
+            d = "RIGHT";
+            nextD = "RIGHT";
+            spawnFood();
+
+            if (gameInterval) clearInterval(gameInterval);
+            isGameRunning = true;
+            gameInteرسمrval = setInterval(gameLoop, 120);
+        }
+
+        function spawnFood() {
+            food = {
+                x: Math.floor(Math.random() * gridCount) * box,
+                y: Math.floor(Math.random() * gridCount) * box
+            };
+            // التأكد من عدم ظهور الطعام فوق الدودة
+            for (let i = 0; i < snake.length; i++) {
+                if (snake[i].x === food.x && snake[i].y === food.y) {
+                    spawnFood();
+                    break;
+                }
+            }
+        }
+
+        function setDirection(newDir) {
+            if (!isGameRunning) return;
+            if (newDir === "LEFT" && d !== "RIGHT") nextD = "LEFT";
+            if (newDir === "UP" && d !== "DOWN") nextD = "UP";
+            if (newDir === "RIGHT" && d !== "LEFT") nextD = "RIGHT";
+            if (newDir === "DOWN" && d !== "UP") nextD = "DOWN";
+        }
+
+        // دعم أسهم الكيبورد للابتوب
+        document.addEventListener("keydown", function(event) {
+            if (event.keyCode === 37) setDirection("LEFT");
+            else if (event.keyCode === 38) setDirection("UP");
+            else if (event.keyCode === 39) setDirection("RIGHT");
+            else if (event.keyCode === 40) setDirection("DOWN");
+        });
+
+        // دعم السحب باللمس على شاشة الهاتف (Swipe)
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        canvas.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, false);
+
+        canvas.addEventListener('touchend', function(e) {
+            let touchEndX = e.changedTouches[0].screenX;
+            let touchEndY = e.changedTouches[0].screenY;
+            handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY);
+        }, false);
+
+        function handleSwipe(startX, startY, endX, endY) {
+            let diffX = endX - startX;
+            let diffY = endY - startY;
+
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (Math.abs(diffX) > 20) {
+                    if (diffX > 0) setDirection("RIGHT");
+                    else setDirection("LEFT");
+                }
+            } else {
+                if (Math.abs(diffY) > 20) {
+                    if (diffY > 0) setDirection("DOWN");
+                    else setDirection("UP");
+                }
+            }
+        }
+
+        // دورة اللعبة الرئيسية
+        function gameLoop() {
+            d = nextD;
+
+            // مسح الشاشة
+            ctx.fillStyle = "#fff0f3";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // رسم الطعام (قلب أحمر)
+            drawHeart(food.x + box / 2, food.y + 2, box * 0.8, "#ff0054");
+
+            // رسم الدودة
+            for (let i = 0; i < snake.length; i++) {
+                if (i === 0) {
+                    // الرأس: قلب أحمر جميل
+                    drawHeart(snake[i].x + box / 2, snake[i].y + 2, box * 0.9, "#ff0054");
+                } else {
+                    // الجسم: ذيل متصل بلون أحمر وردي غامق
+                    ctx.fillStyle = "#ff4d6d";
+                    ctx.beginPath();
+                    ctx.arc(snake[i].x + box / 2, snake[i].y + box / 2, box / 2 - 1, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // حركة الرأس
+            let snakeX = snake[0].x;
+            let snakeY = snake[0].y;
+
+            if (d === "LEFT") snakeX -= box;
+            if (d === "UP") snakeY -= box;
+            if (d === "RIGHT") snakeX += box;
+            if (d === "DOWN") snakeY += box;
+
+            // أكل الكورة (القلب)
+            if (snakeX === food.x && snakeY === food.y) {
+                score++;
+                document.getElementById("score-board").innerText = "النقاط: " + score;
+                spawnFood();
+            } else {
+                snake.pop();
+            }
+
+            let newHead = { x: snakeX, y: snakeY };
+
+            // شروط الخسارة (الاصطدام بالحافة أو بالنفس)
+            if (
+                snakeX < 0 || snakeX >= canvas.width ||
+                snakeY < 0 || snakeY >= canvas.height ||
+                checkCollision(newHead, snake)
+            ) {
+                clearInterval(gameInterval);
+                isGameRunning = false;
+                document.getElementById("game-over-screen").style.display = "flex";
+                return;
+            }
+
+            snake.unshift(newHead);
+        }
+
+        function checkCollision(head, array) {
+            for (let i = 0; i < array.length; i++) {
+                if (head.x === array[i].x && head.y === array[i].y) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    </script>
+</body>
+</html>
